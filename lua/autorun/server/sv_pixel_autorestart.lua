@@ -5,6 +5,7 @@ local config = {
         apiKey = "***REMOVED***",
         apiEndpoint = "***REMOVED***",
         projectId = "***REMOVED***",
+        targetBranch = "master",
         serverId = "981bf713-1966-4dc7-813f-221fc09a3e82" --"***REMOVED***"
     },
     pterodactyl = {
@@ -16,7 +17,7 @@ local config = {
         publicWebhook = "",
         adminWebhook = "***REMOVED***",
         username = "PIXEL Auto-Restart",
-        avatarUrl = nil
+        avatarUrl = "***REMOVED***"
     }
 }
 
@@ -27,12 +28,12 @@ do
     local headers = {
         ["Accept"] = "application/json",
         ["Content-Type"] = "application/json",
-        ["Authorization"] = "Basic " .. conf.emailAddress .. ":" .. conf.apiKey
+        ["Authorization"] = "Basic " .. string.Replace(util.Base64Encode(conf.emailAddress .. ":" .. conf.apiKey), "\n", "") --What the fuck rubat
     }
 
     local function getServerRevision(callback)
         HTTP({
-            ["url"] = string.format("%s/project/%s/servers/%s", conf.apiEndpoint, conf.projectId, conf.serverId),
+            ["url"] = string.format("%s/projects/%s/servers/%s", conf.apiEndpoint, conf.projectId, conf.serverId),
             ["method"] = "GET",
             ["headers"] = headers,
             ["success"] = function(statusCode, body)
@@ -63,10 +64,9 @@ do
 
     local function getLatestCommit(callback)
         HTTP({
-            ["url"] = string.format("%s/projects/%s/repository/recent_commits", conf.apiEndpoint, conf.projectId),
+            ["url"] = string.format("%s/projects/%s/repository/recent_commits/?branch=%s", conf.apiEndpoint, conf.projectId, conf.targetBranch),
             ["method"] = "GET",
             ["headers"] = headers,
-            ["body"] = "{\"branch\":\"master\"}",
             ["success"] = function(statusCode, body)
                 if statusCode ~= 200 then
                     autoRestart:sendDiscordAdminMessage("Failed to get the repository's latest revision via DeployHQ API:\nServer returned a non 200 status code.")
@@ -80,7 +80,7 @@ do
                 end
 
                 local commits = body["commits"]
-                if not lastRevision then
+                if not commits then
                     autoRestart:sendDiscordAdminMessage("Failed to get the repository's latest revision via DeployHQ API:\nResponse doesn't contain a commits list.")
                     return
                 end
@@ -108,13 +108,19 @@ do
     function autoRestart:sendDeployRequest()
         getServerRevision(function(curRevision)
             getLatestCommit(function(newRevision)
+                print(string.format("{\"deployment\":{\"parent_identifier\":\"%s\",\"start_revision\":\"%s\",\"end_revision\":\"%s\"}}",
+                conf.serverId, curRevision, newRevision))
                 HTTP({
                     ["url"] = string.format("%s/projects/%s/deployments", conf.apiEndpoint, conf.projectId),
                     ["method"] = "POST",
                     ["headers"] = headers,
-                    ["body"] = string.format("{\"parent_identifier\":\"%s\",\"start_revision\":\"%s\",\"end_revision\":\"%s\"}",
+                    ["body"] = string.format("{\"deployment\":{\"parent_identifier\":\"%s\",\"start_revision\":\"%s\",\"end_revision\":\"%s\"}}",
                         conf.serverId, curRevision, newRevision),
                     ["success"] = function(statusCode, body)
+                        if statusCode ~= 200 then
+                            self:sendDiscordAdminMessage("Failed to send a deploy request via DeployHQ API:\nServer returned a non 200 status code.")
+                            return
+                        end
                     end,
                     ["failed"] = function(reason)
                         self:sendDiscordAdminMessage("Failed to send a deploy request via DeployHQ API:\n" .. reason)
@@ -135,7 +141,10 @@ function autoRestart:sendRestartSignal()
             ["Content-Type"] = "application/json",
             ["Authorization"] = "Bearer " .. conf.apiKey
         },
-        ["body"] = "{\"signal\": \"restart\"}",
+        ["body"] = "{\"signal\":\"restart\"}",
+        ["success"] = function(statusCode, body)
+            --print(statusCode, body)
+        end,
         ["failed"] = function(reason)
             self:sendDiscordAdminMessage("Failed to reboot the server via Pterodactyl API:\n" .. reason)
         end
@@ -146,21 +155,33 @@ do
     if pcall(function() require("chttp") end) then
         local conf = config.discord
         local function sendRequest(url, message)
+            message = string.Replace(message, "\n", "\\n")
+
             CHTTP({
-                url = url,
-                body = string.format("{\"username\":\"%s\",\"avatar_url\":\"%s\",\"content\":\"%s\"}",
+                ["url"] = url,
+                ["body"] = string.format("{\"username\":\"%s\",\"avatar_url\":\"%s\",\"content\":\"%s\"}",
                     conf.username, conf.avatarUrl, message),
-                method = "POST",
-                type = "application/json"
+                ["method"] = "POST",
+                ["headers"] = {
+                    ["Accept"] = "application/json",
+                    ["Content-Type"] = "application/json"
+                },
+                ["success"] = function(statusCode, body)
+                    if statusCode == 200 or statusCode == 204 then return end
+                    print("Auto Restart: Failed to send Discord message \"" .. message .. "\":\nServer returned a non 200 status code.")
+                end,
+                ["failed"] = function(reason)
+                    print("Auto Restart: Failed to send Discord message \"" .. message .. "\":\n" .. reason)
+                end
             })
         end
 
         function autoRestart:sendDiscordMessage(message)
-            sendRequest(publicWebhook, message)
+            sendRequest(conf.publicWebhook, message)
         end
 
         function autoRestart:sendDiscordAdminMessage(message)
-            sendRequest(adminWebhook, "@everyone " .. message)
+            sendRequest(conf.adminWebhook, "@noteveryone " .. message)
         end
     else
         print("Auto Restart: CHTTP not found, server chat/console as fallback.")
@@ -175,3 +196,5 @@ do
         end
     end
 end
+autoRestart:sendDeployRequest()
+autoRestart:sendRestartSignal()
