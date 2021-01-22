@@ -1,5 +1,8 @@
 
 local config = {
+    deployHq = {
+
+    },
     pterodactyl = {
         apiKey = "***REMOVED***",
         apiEndpoint = "***REMOVED***",
@@ -14,6 +17,11 @@ local config = {
 }
 
 local autoRestart = {}
+
+do
+    function autoRestart:sendDeployRequest()
+    end
+end
 
 function autoRestart:sendRestartSignal()
     local conf = config.pterodactyl
@@ -38,7 +46,7 @@ do
         local function sendRequest(url, message)
             CHTTP({
                 url = url,
-                body = string.format("{\"username\":%s,\"avatar_url\":%s,\"content\":%s}",
+                body = string.format("{\"username\":\"%s\",\"avatar_url\":\"%s\",\"content\":\"%s\"}",
                     conf.username, conf.avatarUrl, message),
                 method = "POST",
                 type = "application/json"
