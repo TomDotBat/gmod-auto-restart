@@ -108,17 +108,16 @@ do
     function autoRestart:sendDeployRequest()
         getServerRevision(function(curRevision)
             getLatestCommit(function(newRevision)
-                print(string.format("{\"deployment\":{\"parent_identifier\":\"%s\",\"start_revision\":\"%s\",\"end_revision\":\"%s\"}}",
-                conf.serverId, curRevision, newRevision))
                 HTTP({
                     ["url"] = string.format("%s/projects/%s/deployments", conf.apiEndpoint, conf.projectId),
                     ["method"] = "POST",
                     ["headers"] = headers,
+                    ["type"] = "application/json",
                     ["body"] = string.format("{\"deployment\":{\"parent_identifier\":\"%s\",\"start_revision\":\"%s\",\"end_revision\":\"%s\"}}",
                         conf.serverId, curRevision, newRevision),
                     ["success"] = function(statusCode, body)
-                        if statusCode ~= 200 then
-                            self:sendDiscordAdminMessage("Failed to send a deploy request via DeployHQ API:\nServer returned a non 200 status code.")
+                        if statusCode ~= 201 then
+                            self:sendDiscordAdminMessage("Failed to send a deploy request via DeployHQ API:\nServer returned a non 201 status code.")
                             return
                         end
                     end,
@@ -141,9 +140,13 @@ function autoRestart:sendRestartSignal()
             ["Content-Type"] = "application/json",
             ["Authorization"] = "Bearer " .. conf.apiKey
         },
+        ["type"] = "application/json",
         ["body"] = "{\"signal\":\"restart\"}",
         ["success"] = function(statusCode, body)
-            --print(statusCode, body)
+            if statusCode ~= 204 then
+                self:sendDiscordAdminMessage("Failed to reboot the server via Pterodactyl API:\nServer returned a non 204 status code.")
+                return
+            end
         end,
         ["failed"] = function(reason)
             self:sendDiscordAdminMessage("Failed to reboot the server via Pterodactyl API:\n" .. reason)
@@ -196,5 +199,3 @@ do
         end
     end
 end
-autoRestart:sendDeployRequest()
-autoRestart:sendRestartSignal()
