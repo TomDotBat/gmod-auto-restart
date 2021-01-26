@@ -1,5 +1,11 @@
 
 local config = {
+    restartChecker = {
+        earliestTime = 6 * 3600, --*3600 for hours
+        latestTime = 12 * 3600,
+        maxPlayers = 1,
+        playerCheckFrequency = 1 * 60
+    },
     deployHq = {
         emailAddress = "***REMOVED***",
         apiKey = "***REMOVED***",
@@ -22,6 +28,47 @@ local config = {
 }
 
 local autoRestart = {}
+
+do
+    local conf = config.restartChecker
+    timer.Create("AutoRestart.RestartReadyChecker", conf.earliestTime, 1, function()
+        do
+            local playerCount = player.GetCount()
+            if playerCount > conf.maxPlayers then return end
+            if playerCount == 0 then autoRestart:startRestart()
+            else autoRestart:startForcefulRestart() end
+            return
+        end
+
+        --do
+        --    local restartMessage = "There is a server restart due in %s."
+        --    local restartTime = (conf.latestTime - conf.earliestTime)
+        --    if restartTime then
+        --        restartMessage = string.format(restartMessage, restartTime .. " seconds") --do this logic pls
+        --    elseif restartTime then
+        --        restartMessage = string.format(restartMessage, restartTime .. " minutes")
+        --    elseif restartTime then
+        --        restartMessage = string.format(restartMessage, restartTime .. " hours")
+        --    end
+--
+        --    --message goes in chat here, make a common func
+        --end
+
+        hook.Run("AutoRestart.WaitingForPlayersStarted")
+
+        timer.Create("AutoRestart.WaitForPlayerLeave", conf.playerCheckFrequency, (conf.latestTime - conf.earliestTime) / conf.playerCheckFrequency, function()
+            if timer.RepsLeft("AutoRestart.WaitForPlayerLeave") < 1 then --We've hit the latest restart time, we MUST do one forcefully now
+                autoRestart:startForcefulRestart()
+                return
+            end
+
+            local playerCount = player.GetCount()
+            if playerCount > conf.maxPlayers then return end
+            if playerCount == 0 then autoRestart:startRestart()
+            else autoRestart:startForcefulRestart() end
+        end)
+    end)
+end
 
 do
     local conf = config.deployHq
@@ -197,5 +244,23 @@ do
         function autoRestart:sendDiscordAdminMessage(message)
             print("Auto Restart: " .. message)
         end
+    end
+end
+
+do
+    local function cancelTasks()
+        timer.Remove("AutoRestart.RestartReadyChecker")
+        timer.Remove("AutoRestart.WaitForPlayerLeave")
+    end
+    
+    function autoRestart:startRestart()
+        cancelTasks()
+        hook.Run("AutoRestart.RestartStarted")
+    end
+
+    function autoRestart:startForcefulRestart()
+        cancelTasks()
+        hook.Run("AutoRestart.ForcefulRestartStarted")
+        self:startForcefulRestart()
     end
 end
