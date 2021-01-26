@@ -234,7 +234,7 @@ do
             sendRequest(conf.adminWebhook, "@noteveryone " .. message)
         end
     else
-        print("Auto Restart: CHTTP not found, server chat/console as fallback.")
+        print("Auto Restart: CHTTP not found, using server chat/console as fallback.")
         function autoRestart:sendDiscordMessage(message)
             message = "Auto Restart: " .. message
             PrintMessage(HUD_PRINTTALK, message)
