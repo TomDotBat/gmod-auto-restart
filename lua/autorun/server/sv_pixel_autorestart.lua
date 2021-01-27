@@ -31,7 +31,8 @@ local autoRestart = {}
 
 do
     local conf = config.restartChecker
-    timer.Create("AutoRestart.RestartReadyChecker", conf.earliestTime, 1, function()
+
+    function autoRestart.onRestartReady()
         do
             local playerCount = player.GetCount()
             if playerCount > conf.maxPlayers then return end
@@ -50,24 +51,28 @@ do
         --    elseif restartTime then
         --        restartMessage = string.format(restartMessage, restartTime .. " hours")
         --    end
---
+    --
         --    --message goes in chat here, make a common func
         --end
 
         hook.Run("AutoRestart.WaitingForPlayersStarted")
 
-        timer.Create("AutoRestart.WaitForPlayerLeave", conf.playerCheckFrequency, (conf.latestTime - conf.earliestTime) / conf.playerCheckFrequency, function()
-            if timer.RepsLeft("AutoRestart.WaitForPlayerLeave") < 1 then --We've hit the latest restart time, we MUST do one forcefully now
-                autoRestart:startForcefulRestart()
-                return
-            end
+        timer.Create("AutoRestart.WaitForPlayerLeave", conf.playerCheckFrequency, (conf.latestTime - conf.earliestTime) / conf.playerCheckFrequency, autoRestart.onPlayerWaitCheck)
+    end
 
-            local playerCount = player.GetCount()
-            if playerCount > conf.maxPlayers then return end
-            if playerCount == 0 then autoRestart:startRestart()
-            else autoRestart:startForcefulRestart() end
-        end)
-    end)
+    function autoRestart.onPlayerWaitCheck()
+        if timer.RepsLeft("AutoRestart.WaitForPlayerLeave") < 1 then
+            autoRestart:startForcefulRestart()
+            return
+        end
+
+        local playerCount = player.GetCount()
+        if playerCount > conf.maxPlayers then return end
+        if playerCount == 0 then autoRestart:startRestart()
+        else autoRestart:startForcefulRestart() end
+    end
+
+    timer.Create("AutoRestart.RestartReadyChecker", conf.earliestTime, 1, autoRestart.onRestartReady)
 end
 
 do
