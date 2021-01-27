@@ -55,9 +55,9 @@ do
         --    --message goes in chat here, make a common func
         --end
 
-        hook.Run("AutoRestart.WaitingForPlayersStarted")
-
-        timer.Create("AutoRestart.WaitForPlayerLeave", conf.playerCheckFrequency, (conf.latestTime - conf.earliestTime) / conf.playerCheckFrequency, autoRestart.onPlayerWaitCheck)
+        local timeLeft = conf.latestTime - conf.earliestTime
+        hook.Run("AutoRestart.WaitingForPlayersStarted", timeLeft)
+        timer.Create("AutoRestart.WaitForPlayerLeave", conf.playerCheckFrequency, timeLeft / conf.playerCheckFrequency, autoRestart.onPlayerWaitCheck)
     end
 
     function autoRestart.onPlayerWaitCheck()
