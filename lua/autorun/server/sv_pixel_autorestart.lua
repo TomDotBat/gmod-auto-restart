@@ -39,6 +39,8 @@ do
             else autoRestart:startForcefulRestart() end
             return
         end
+        
+        autoRestart:sendDiscordAdminMessage("The server is ready for a restart but players are online, waiting for them to leave...")
 
         --do
         --    local restartMessage = "There is a server restart due in %s."
@@ -89,26 +91,26 @@ do
             ["headers"] = headers,
             ["success"] = function(statusCode, body)
                 if statusCode ~= 200 then
-                    autoRestart:sendDiscordAdminMessage("Failed to get the server's latest revision via DeployHQ API:\nServer returned a non 200 status code.")
+                    autoRestart:sendDiscordAdminMessage("Failed to get the server's latest revision via DeployHQ API:\nServer returned a non 200 status code.", true)
                     return
                 end
 
                 body = util.JSONToTable(body)
                 if not body then
-                    autoRestart:sendDiscordAdminMessage("Failed to get the server's latest revision via DeployHQ API:\nFailed to parse response body.")
+                    autoRestart:sendDiscordAdminMessage("Failed to get the server's latest revision via DeployHQ API:\nFailed to parse response body.", true)
                     return
                 end
 
                 local lastRevision = body["last_revision"]
                 if not lastRevision then
-                    autoRestart:sendDiscordAdminMessage("Failed to get the server's latest revision via DeployHQ API:\nResponse doesn't contain a last revision.")
+                    autoRestart:sendDiscordAdminMessage("Failed to get the server's latest revision via DeployHQ API:\nResponse doesn't contain a last revision.", true)
                     return
                 end
 
                 callback(lastRevision)
             end,
             ["failed"] = function(reason)
-                autoRestart:sendDiscordAdminMessage("Failed to get the server's latest revision via DeployHQ API:\n" .. reason)
+                autoRestart:sendDiscordAdminMessage("Failed to get the server's latest revision via DeployHQ API:\n" .. reason, true)
             end
         })
     end
@@ -120,38 +122,38 @@ do
             ["headers"] = headers,
             ["success"] = function(statusCode, body)
                 if statusCode ~= 200 then
-                    autoRestart:sendDiscordAdminMessage("Failed to get the repository's latest revision via DeployHQ API:\nServer returned a non 200 status code.")
+                    autoRestart:sendDiscordAdminMessage("Failed to get the repository's latest revision via DeployHQ API:\nServer returned a non 200 status code.", true)
                     return
                 end
 
                 body = util.JSONToTable(body)
                 if not body then
-                    autoRestart:sendDiscordAdminMessage("Failed to get the repository's latest revision via DeployHQ API:\nFailed to parse response body.")
+                    autoRestart:sendDiscordAdminMessage("Failed to get the repository's latest revision via DeployHQ API:\nFailed to parse response body.", true)
                     return
                 end
 
                 local commits = body["commits"]
                 if not commits then
-                    autoRestart:sendDiscordAdminMessage("Failed to get the repository's latest revision via DeployHQ API:\nResponse doesn't contain a commits list.")
+                    autoRestart:sendDiscordAdminMessage("Failed to get the repository's latest revision via DeployHQ API:\nResponse doesn't contain a commits list.", true)
                     return
                 end
 
                 local latestCommit = commits[1]
                 if not latestCommit then
-                    autoRestart:sendDiscordAdminMessage("Failed to get the repository's latest revision via DeployHQ API:\nResponse doesn't contain a commits at index 1.")
+                    autoRestart:sendDiscordAdminMessage("Failed to get the repository's latest revision via DeployHQ API:\nResponse doesn't contain a commits at index 1.", true)
                     return
                 end
 
                 local commitId = latestCommit["ref"]
                 if not commitId then
-                    autoRestart:sendDiscordAdminMessage("Failed to get the repository's latest revision via DeployHQ API:\nResponse doesn't contain a commit ID.")
+                    autoRestart:sendDiscordAdminMessage("Failed to get the repository's latest revision via DeployHQ API:\nResponse doesn't contain a commit ID.", true)
                     return
                 end
 
                 callback(commitId)
             end,
             ["failed"] = function(reason)
-                autoRestart:sendDiscordAdminMessage("Failed to the latest commit via DeployHQ API:\n" .. reason)
+                autoRestart:sendDiscordAdminMessage("Failed to the latest commit via DeployHQ API:\n" .. reason, true)
             end
         })
     end
@@ -168,12 +170,12 @@ do
                         conf.serverId, curRevision, newRevision),
                     ["success"] = function(statusCode, body)
                         if statusCode ~= 201 then
-                            self:sendDiscordAdminMessage("Failed to send a deploy request via DeployHQ API:\nServer returned a non 201 status code.")
+                            self:sendDiscordAdminMessage("Failed to send a deploy request via DeployHQ API:\nServer returned a non 201 status code.", true)
                             return
                         end
                     end,
                     ["failed"] = function(reason)
-                        self:sendDiscordAdminMessage("Failed to send a deploy request via DeployHQ API:\n" .. reason)
+                        self:sendDiscordAdminMessage("Failed to send a deploy request via DeployHQ API:\n" .. reason, true)
                     end
                 })
             end)
@@ -195,12 +197,12 @@ function autoRestart:sendRestartSignal()
         ["body"] = "{\"signal\":\"restart\"}",
         ["success"] = function(statusCode, body)
             if statusCode ~= 204 then
-                self:sendDiscordAdminMessage("Failed to reboot the server via Pterodactyl API:\nServer returned a non 204 status code.")
+                self:sendDiscordAdminMessage("Failed to reboot the server via Pterodactyl API:\nServer returned a non 204 status code.", true)
                 return
             end
         end,
         ["failed"] = function(reason)
-            self:sendDiscordAdminMessage("Failed to reboot the server via Pterodactyl API:\n" .. reason)
+            self:sendDiscordAdminMessage("Failed to reboot the server via Pterodactyl API:\n" .. reason, true)
         end
     })
 end
@@ -234,8 +236,9 @@ do
             sendRequest(conf.publicWebhook, message)
         end
 
-        function autoRestart:sendDiscordAdminMessage(message)
-            sendRequest(conf.adminWebhook, "@noteveryone " .. message)
+        function autoRestart:sendDiscordAdminMessage(message, mention)
+            if mention then message = "@noteveryone " .. message end
+            sendRequest(conf.adminWebhook, message)
         end
     else
         print("Auto Restart: CHTTP not found, using server chat/console as fallback.")
@@ -260,11 +263,14 @@ do
     function autoRestart:startRestart()
         cancelTasks()
         hook.Run("AutoRestart.RestartStarted")
+
+        self:sendDiscordAdminMessage("A non-forceful restart was called.")
     end
 
     function autoRestart:startForcefulRestart()
         cancelTasks()
         hook.Run("AutoRestart.ForcefulRestartStarted")
-        self:startForcefulRestart()
+
+        self:sendDiscordAdminMessage("A forceful restart was called.")
     end
 end
