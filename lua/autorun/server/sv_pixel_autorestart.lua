@@ -33,9 +33,8 @@ do
     local conf = config.restartChecker
 
     function autoRestart.onRestartReady()
-        do
-            local playerCount = player.GetCount()
-            if playerCount > conf.maxPlayers then return end
+        local playerCount = player.GetCount()
+        if playerCount <= conf.maxPlayers then
             if playerCount == 0 then autoRestart:startRestart()
             else autoRestart:startForcefulRestart() end
             return
