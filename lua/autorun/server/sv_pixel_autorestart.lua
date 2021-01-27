@@ -6,13 +6,19 @@ local config = {
         maxPlayers = 1,
         playerCheckFrequency = 1 * 60
     },
+    forcedRestart = {
+        deployTime = 2.5 * 60,
+        restartTime = 5 * 60
+    },
     deployHq = {
         emailAddress = "***REMOVED***",
         apiKey = "***REMOVED***",
         apiEndpoint = "***REMOVED***",
         projectId = "***REMOVED***",
         targetBranch = "master",
-        serverId = "981bf713-1966-4dc7-813f-221fc09a3e82" --"***REMOVED***"
+        serverId = "981bf713-1966-4dc7-813f-221fc09a3e82", --"***REMOVED***"
+        completionCheckInterval = 15,
+        completionCheckLimit = 0
     },
     pterodactyl = {
         apiKey = "***REMOVED***",
@@ -31,7 +37,6 @@ local autoRestart = {}
 
 do
     local conf = config.restartChecker
-
     function autoRestart.onRestartReady()
         local playerCount = player.GetCount()
         if playerCount <= conf.maxPlayers then
@@ -39,7 +44,7 @@ do
             else autoRestart:startForcefulRestart() end
             return
         end
-        
+
         autoRestart:sendDiscordAdminMessage("The server is ready for a restart but players are online, waiting for them to leave...")
 
         --do
@@ -158,7 +163,50 @@ do
         })
     end
 
-    function autoRestart:sendDeployRequest()
+    function autoRestart:checkForDeployCompletion(deployId, callback)
+        HTTP({
+            ["url"] = string.format("%s/projects/%s/deployments/%s", conf.apiEndpoint, conf.projectId, deployId),
+            ["method"] = "GET",
+            ["headers"] = headers,
+            ["success"] = function(statusCode, body)
+                if statusCode ~= 200 then
+                    self:sendDiscordAdminMessage("Failed to get the server's deploy completion state via DeployHQ API:\nServer returned a non 200 status code.", true)
+                    return
+                end
+
+                body = util.JSONToTable(body)
+                if not body then
+                    self:sendDiscordAdminMessage("Failed to get the server's deploy completion state via DeployHQ API:\nFailed to parse response body.", true)
+                    return
+                end
+
+                callback(body["status"] == "completed")
+            end,
+            ["failed"] = function(reason)
+                self:sendDiscordAdminMessage("Failed to get the server's deploy completion state via DeployHQ API:\n" .. reason, true)
+            end
+        })
+    end
+
+    function autoRestart:waitForDeployCompletion(deployId, callback)
+        timer.Create("AutoRestart.WaitForDeployCompletion", conf.completionCheckInterval, conf.completionCheckLimit, function()
+            self:checkForDeployCompletion(deployId, function(complete)
+                if complete then
+                    callback(true)
+                    timer.Remove("AutoRestart.WaitForDeployCompletion")
+                    return
+                end
+
+                if conf.completionCheckLimit == 0 then return end
+                if timer.RepsLeft("AutoRestart.WaitForDeployCompletion") > 0 then return end
+
+                self:sendDiscordAdminMessage("The deploy completion checker timed out.", true)
+                callback()
+            end)
+        end)
+    end
+
+    function autoRestart:sendDeployRequest(callback)
         getServerRevision(function(curRevision)
             getLatestCommit(function(newRevision)
                 HTTP({
@@ -173,6 +221,20 @@ do
                             self:sendDiscordAdminMessage("Failed to send a deploy request via DeployHQ API:\nServer returned a non 201 status code.", true)
                             return
                         end
+
+                        body = util.JSONToTable(body)
+                        if not body then
+                            self:sendDiscordAdminMessage("Failed to get the ongoing deploy ID via DeployHQ API:\nFailed to parse response body.", true)
+                            return
+                        end
+
+                        local deployId = body["identifier"]
+                        if not deployId then
+                            self:sendDiscordAdminMessage("Failed to get the ongoing deploy ID via DeployHQ API:\nResponse doesn't contain a deploy ID.", true)
+                            return
+                        end
+
+                        self:waitForDeployCompletion(deployId, callback)
                     end,
                     ["failed"] = function(reason)
                         self:sendDiscordAdminMessage("Failed to send a deploy request via DeployHQ API:\n" .. reason, true)
@@ -215,8 +277,7 @@ do
 
             CHTTP({
                 ["url"] = url,
-                ["body"] = string.format("{\"username\":\"%s\",\"avatar_url\":\"%s\",\"content\":\"%s\"}",
-                    conf.username, conf.avatarUrl, message),
+                ["body"] = string.format("{\"username\":\"%s\",\"avatar_url\":\"%s\",\"content\":\"%s\"}", conf.username, conf.avatarUrl, message),
                 ["method"] = "POST",
                 ["headers"] = {
                     ["Accept"] = "application/json",
@@ -255,16 +316,22 @@ do
 end
 
 do
+    local conf = config.forcedRestart
     local function cancelTasks()
         timer.Remove("AutoRestart.RestartReadyChecker")
         timer.Remove("AutoRestart.WaitForPlayerLeave")
     end
-    
+
     function autoRestart:startRestart()
         cancelTasks()
         hook.Run("AutoRestart.RestartStarted")
 
-        self:sendDiscordAdminMessage("A non-forceful restart was called.")
+        self:sendDiscordAdminMessage("A non-forceful restart was called, running a deploy.")
+
+        self:sendDeployRequest(function(complete)
+            self:sendDiscordAdminMessage("The deploy has completed successfully, restarting the server.")
+            self:sendRestartSignal()
+        end)
     end
 
     function autoRestart:startForcefulRestart()
