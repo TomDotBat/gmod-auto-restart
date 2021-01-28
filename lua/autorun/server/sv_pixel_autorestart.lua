@@ -374,4 +374,22 @@ do
             end)
         end)
     end
+
+    function autoRestart:cancelRestart(ply)
+        if not IsValid(ply) then return end
+        if not ply:IsSuperAdmin() then return end
+
+        self:sendDiscordAdminMessage("The automated restart was cancelled by " .. ply .. ".", true)
+
+        timer.Remove("AutoRestart.RestartReadyChecker")
+        timer.Remove("AutoRestart.WaitForPlayerLeave")
+
+        timer.Remove("AutoRestart.ForcefulDeploy")
+        timer.Remove("AutoRestart.ForcefulRestart")
+        timer.Remove("AutoRestart.ForcefulRestartDelay")
+    end
 end
+
+AutoRestart = {
+    ["CancelRestart"] = function(ply) autoRestart:cancelRestart(ply) end
+}
