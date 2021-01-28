@@ -8,7 +8,8 @@ local config = {
     },
     forcedRestart = {
         deployTime = 2.5 * 60,
-        restartTime = 5 * 60
+        restartTime = 5 * 60,
+        deployDelayTime = 60
     },
     deployHq = {
         emailAddress = "***REMOVED***",
@@ -41,7 +42,7 @@ do
         local playerCount = player.GetCount()
         if playerCount <= conf.maxPlayers then
             if playerCount == 0 then autoRestart:startRestart()
-            else autoRestart:startForcefulRestart() end
+            else autoRestart:startForcefulRestart(config.forcedRestart.deployTime, config.forcedRestart.restartTime) end
             return
         end
 
@@ -68,14 +69,14 @@ do
 
     function autoRestart.onPlayerWaitCheck()
         if timer.RepsLeft("AutoRestart.WaitForPlayerLeave") < 1 then
-            autoRestart:startForcefulRestart()
+            autoRestart:startForcefulRestart(config.forcedRestart.deployTime, config.forcedRestart.restartTime)
             return
         end
 
         local playerCount = player.GetCount()
         if playerCount > conf.maxPlayers then return end
         if playerCount == 0 then autoRestart:startRestart()
-        else autoRestart:startForcefulRestart() end
+        else autoRestart:startForcefulRestart(config.forcedRestart.deployTime, config.forcedRestart.restartTime) end
     end
 
     timer.Create("AutoRestart.RestartReadyChecker", conf.earliestTime, 1, autoRestart.onRestartReady)
@@ -326,18 +327,58 @@ do
         cancelTasks()
         hook.Run("AutoRestart.RestartStarted")
 
-        self:sendDiscordAdminMessage("A non-forceful restart was called, running a deploy.")
+        self:sendDiscordAdminMessage("A non-forceful restart was requested, running a deploy.")
 
         self:sendDeployRequest(function(complete)
+            if not complete then return end
+
             self:sendDiscordAdminMessage("The deploy has completed successfully, restarting the server.")
             self:sendRestartSignal()
         end)
     end
 
-    function autoRestart:startForcefulRestart()
+    function autoRestart:startForcefulRestart(deployTime, restartTime)
         cancelTasks()
-        hook.Run("AutoRestart.ForcefulRestartStarted")
+        hook.Run("AutoRestart.ForcefulRestartScheduled", deployTime, restartTime)
 
-        self:sendDiscordAdminMessage("A forceful restart was called.")
+        self:sendDiscordAdminMessage("A forceful restart was requested.")
+
+        local canRestart
+        timer.Create("AutoRestart.ForcefulDeploy", deployTime, 1, function()
+            hook.Run("AutoRestart.ForcefulDeployStarted")
+
+            self:sendDeployRequest(function(complete)
+                if not complete then return end
+
+                canRestart = true
+                self:sendDiscordAdminMessage("The deploy has completed successfully.")
+                hook.Run("AutoRestart.ForcefulDeployComplete")
+            end)
+        end)
+
+        timer.Create("AutoRestart.ForcefulRestart", restartTime, 1, function()
+            if canRestart then
+                hook.Run("AutoRestart.ForcefulRestartStarted")
+                self:sendDiscordAdminMessage("The restart timer has finished, restarting the server.")
+                self:sendRestartSignal()
+
+                return
+            end
+
+            hook.Run("AutoRestart.ForcefulRestartDelayed")
+            self:sendDiscordAdminMessage("The restart has been delayed, waiting for the deploy to finish first.")
+
+            timer.Create("AutoRestart.ForcefulRestartDelay", conf.deployDelayTime, 5, function()
+                if canRestart then
+                    hook.Run("AutoRestart.ForcefulRestartStarted")
+                    self:sendDiscordAdminMessage("The restart timer has finished, restarting the server.")
+                    self:sendRestartSignal()
+                end
+
+                if timer.RepsLeft("AutoRestart.WaitForDeployCompletion") > 0 then return end
+                hook.Run("AutoRestart.ForcefulRestartUnscheduled")
+                self:sendDiscordAdminMessage("The deploy took too long to execute and the restart has been unscheduled.", true)
+            end)
+        end)
     end
 end
