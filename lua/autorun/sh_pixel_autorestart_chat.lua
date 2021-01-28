@@ -1,4 +1,6 @@
 
+AddCSLuaFile()
+
 if CLIENT then
     local chatTagCol = Color(49, 137, 238)
     local chatMessageCol = Color(255, 255, 255)
