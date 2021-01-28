@@ -9,7 +9,7 @@ local config = {
     forcedRestart = {
         deployTime = 2.5 * 60,
         restartTime = 5 * 60,
-        deployDelayTime = 60
+        deployDelayTime = 30
     },
     deployHq = {
         emailAddress = "***REMOVED***",
@@ -27,10 +27,11 @@ local config = {
         serverId = "27c2b5b6" --"1a7ce997"
     },
     discord = {
-        publicWebhook = "",
+        publicWebhook = "***REMOVED***",
         adminWebhook = "***REMOVED***",
         username = "PIXEL Auto-Restart",
-        avatarUrl = "***REMOVED***"
+        avatarUrl = "***REMOVED***",
+        steamJoinLink = "steam://connect/***REMOVED***"
     }
 }
 
@@ -288,6 +289,10 @@ do
             if mention then message = "@noteveryone " .. message end
             sendRequest(conf.adminWebhook, message)
         end
+
+        hook.Add("InitPostEntity", "AutoRestart.AlertStarted", function()
+            autoRestart:sendDiscordMessage("The server has updated automatically and is now back online.\n" .. conf.steamJoinLink)
+        end)
     else
         print("Auto Restart: CHTTP not found, using server chat/console as fallback.")
         function autoRestart:sendDiscordMessage(message)
@@ -327,6 +332,7 @@ do
         cancelTasks()
         hook.Run("AutoRestart.ForcefulRestartScheduled", deployTime, restartTime)
 
+        self:sendDiscordMessage("The server is about to restart, please wait before joining.")
         self:sendDiscordAdminMessage("A forceful restart was requested.")
 
         local canRestart
