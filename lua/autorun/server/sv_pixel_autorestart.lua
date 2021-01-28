@@ -31,7 +31,8 @@ local config = {
         adminWebhook = "***REMOVED***",
         username = "PIXEL Auto-Restart",
         avatarUrl = "***REMOVED***",
-        steamJoinLink = "steam://connect/***REMOVED***"
+        steamJoinLink = "steam://connect/***REMOVED***",
+        discordJoinLink = "https://discord.gg/***REMOVED***"
     }
 }
 
@@ -234,6 +235,13 @@ do
 end
 
 function autoRestart:sendRestartSignal()
+    local discordLink = config.discord.discordJoinLink
+    for _, ply in ipairs(player.GetAll()) do
+        ply:Kick([[The server is running an automated restart, it will be available soon.
+Join the Discord for an alert for when it's back online:
+]] .. discordLink)
+    end
+
     local conf = config.pterodactyl
     HTTP({
         ["url"] = string.format("%s/client/servers/%s/power", conf.apiEndpoint, conf.serverId),
