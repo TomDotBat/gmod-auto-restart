@@ -234,7 +234,7 @@ do
                             return
                         end
 
-                        self:waitForDeployCompletion(deployId, callback)
+                        if callback then self:waitForDeployCompletion(deployId, callback) end
                     end,
                     ["failed"] = function(reason)
                         self:sendDiscordAdminMessage("Failed to send a deploy request via DeployHQ API:\n" .. reason, true)
