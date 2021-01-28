@@ -48,20 +48,6 @@ do
 
         autoRestart:sendDiscordAdminMessage("The server is ready for a restart but players are online, waiting for them to leave...")
 
-        --do
-        --    local restartMessage = "There is a server restart due in %s."
-        --    local restartTime = (conf.latestTime - conf.earliestTime)
-        --    if restartTime then
-        --        restartMessage = string.format(restartMessage, restartTime .. " seconds") --do this logic pls
-        --    elseif restartTime then
-        --        restartMessage = string.format(restartMessage, restartTime .. " minutes")
-        --    elseif restartTime then
-        --        restartMessage = string.format(restartMessage, restartTime .. " hours")
-        --    end
-    --
-        --    --message goes in chat here, make a common func
-        --end
-
         local timeLeft = conf.latestTime - conf.earliestTime
         hook.Run("AutoRestart.WaitingForPlayersStarted", timeLeft)
         timer.Create("AutoRestart.WaitForPlayerLeave", conf.playerCheckFrequency, timeLeft / conf.playerCheckFrequency, autoRestart.onPlayerWaitCheck)
