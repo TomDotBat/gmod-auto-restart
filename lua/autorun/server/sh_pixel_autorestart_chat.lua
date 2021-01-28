@@ -5,6 +5,7 @@ if CLIENT then
 
     net.Receive("AutoRestart.ChatMessage", function()
         chat.AddText(chatTagCol, "[PIXEL AutoRestart] ", chatMessageCol, net.ReadString())
+        chat.PlaySound()
     end)
 else
     util.AddNetworkString("AutoRestart.ChatMessage")
@@ -15,7 +16,7 @@ else
     end
 
     local floor, format = math.floor, string.format
-    local function formatTime(time)
+    local function formatTime(val)
         local tmp = val
         local s = tmp % 60
         tmp = floor(tmp / 60)
