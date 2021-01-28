@@ -17,14 +17,14 @@ local config = {
         apiEndpoint = "***REMOVED***",
         projectId = "***REMOVED***",
         targetBranch = "master",
-        serverId = "981bf713-1966-4dc7-813f-221fc09a3e82", --"***REMOVED***"
+        serverId = "***REMOVED***",
         completionCheckInterval = 15,
         completionCheckLimit = 0
     },
     pterodactyl = {
         apiKey = "***REMOVED***",
         apiEndpoint = "***REMOVED***",
-        serverId = "27c2b5b6" --"1a7ce997"
+        serverId = "268995a6"
     },
     discord = {
         publicWebhook = "***REMOVED***",
