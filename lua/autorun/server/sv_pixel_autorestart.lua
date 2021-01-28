@@ -286,7 +286,7 @@ do
         end
 
         function autoRestart:sendDiscordAdminMessage(message, mention)
-            if mention then message = "@noteveryone " .. message end
+            if mention then message = "@everyone " .. message end
             sendRequest(conf.adminWebhook, message)
         end
 
