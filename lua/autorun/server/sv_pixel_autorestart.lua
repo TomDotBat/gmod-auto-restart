@@ -373,9 +373,10 @@ do
                     hook.Run("AutoRestart.ForcefulRestartStarted")
                     self:sendDiscordAdminMessage("The restart timer has finished, restarting the server.")
                     self:sendRestartSignal()
+                    return
                 end
 
-                if timer.RepsLeft("AutoRestart.WaitForDeployCompletion") > 0 then return end
+                if (timer.RepsLeft("AutoRestart.WaitForDeployCompletion") or 1) > 0 then return end
                 hook.Run("AutoRestart.ForcefulRestartUnscheduled")
                 self:sendDiscordAdminMessage("The deploy took too long to execute and the restart has been unscheduled.", true)
             end)
