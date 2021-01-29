@@ -387,7 +387,7 @@ do
         if not IsValid(ply) then return end
         if not ply:IsSuperAdmin() then return end
 
-        self:sendDiscordAdminMessage("The automated restart was cancelled by " .. ply .. ".", true)
+        self:sendDiscordAdminMessage("The automated restart was cancelled by " .. ply:Name() .. ".", true)
 
         timer.Remove("AutoRestart.RestartReadyChecker")
         timer.Remove("AutoRestart.WaitForPlayerLeave")
