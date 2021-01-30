@@ -2,7 +2,7 @@
 local config = {
     restartChecker = {
         earliestTime = 6 * 3600, --*3600 for hours
-        latestTime = 12 * 3600,
+        latestTime = 22 * 3600,
         maxPlayers = 1,
         playerCheckFrequency = 1 * 60
     },
