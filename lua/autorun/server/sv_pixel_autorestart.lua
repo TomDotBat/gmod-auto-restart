@@ -24,7 +24,7 @@ local config = {
     pterodactyl = {
         apiKey = "***REMOVED***",
         apiEndpoint = "***REMOVED***",
-        serverId = "268995a6"
+        serverId = "***REMOVED***"
     },
     discord = {
         publicWebhook = "***REMOVED***",
