@@ -37,8 +37,8 @@ local config = {
         discordJoinLink = "https://discord.gg/***REMOVED***"
     },
     authed = {
-        ["76561198120125520"] = true, //blu
-        ["76561198215456356"] = true //tom
+        ["76561198215456356"] = true, --tom
+        ***REMOVED***
     }
 }
 
@@ -331,7 +331,7 @@ do
     function autoRestart:startRestart(forced, ply)
         if forced then
             if not IsValid(ply) then return end
-            if not config.authed[ply:SteamID64()] then 
+            if not config.authed[ply:SteamID64()] then
                 self:sendDiscordAdminMessage("A non-authed user atempted to start a restart " .. ply:Name() .. ":" .. ply:SteamID64())
             return end
 
@@ -340,7 +340,7 @@ do
 
         cancelTasks()
         hook.Run("AutoRestart.RestartStarted")
-        
+
         if not forced then
             self:sendDiscordAdminMessage("A non-forceful restart was requested, running a deploy.")
         end
