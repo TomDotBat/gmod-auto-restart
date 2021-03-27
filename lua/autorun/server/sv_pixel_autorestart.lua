@@ -35,6 +35,10 @@ local config = {
         avatarUrl = "***REMOVED***",
         steamJoinLink = "steam://connect/***REMOVED***",
         discordJoinLink = "https://discord.gg/***REMOVED***"
+    },
+    authed = {
+        ["76561198120125520"] = true, //blu
+        ["76561198215456356"] = true //tom
     }
 }
 
@@ -324,11 +328,22 @@ do
         timer.Remove("AutoRestart.WaitForPlayerLeave")
     end
 
-    function autoRestart:startRestart()
+    function autoRestart:startRestart(forced, ply)
+        if forced then
+            if not IsValid(ply) then return end
+            if not config.authed[ply:SteamID64()] then 
+                self:sendDiscordAdminMessage("A non-authed user atempted to start a restart " .. ply:Name() .. ":" .. ply:SteamID64())
+            return end
+
+            self:sendDiscordAdminMessage(ply:Name() .. " has requested a server restart, running a deploy.")
+        end
+
         cancelTasks()
         hook.Run("AutoRestart.RestartStarted")
-
-        self:sendDiscordAdminMessage("A non-forceful restart was requested, running a deploy.")
+        
+        if not forced then
+            self:sendDiscordAdminMessage("A non-forceful restart was requested, running a deploy.")
+        end
 
         self:sendDeployRequest(function(complete)
             if not complete then return end
@@ -401,5 +416,6 @@ do
 end
 
 AutoRestart = {
-    ["CancelRestart"] = function(ply) autoRestart:cancelRestart(ply) end
+    ["CancelRestart"] = function(ply) autoRestart:cancelRestart(ply) end,
+    ["StartRestart"] = function(ply) autoRestart:startRestart(true, ply) end
 }
