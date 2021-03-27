@@ -43,13 +43,11 @@ sam.command.new("queuerestart")
             AutoRestart.StartRestart(caller)
         end)
         
-        local timeLeft = timeUntilRestart
-        local timeSplit = timeUntilRestart / 3
-        
-        timer.Create("PIXEL.AutoRestart.ChatTimer", timeSplit, 3, function()
-            timeLeft = timeLeft - timeSplit
+        local timeLeft = length
+        timer.Create("PIXEL.AutoRestart.ChatTimer", length, 60, function()
+            timeLeft = timeLeft - 1
             for _, ply in ipairs(player.GetAll()) do
-                ply:ChatPrint("The server will be restarting in " .. math.Round(length - timeLeft / 60, 1) .. " minutes")
+                ply:ChatPrint("The server will be restarting in " .. timeLeft .. " minutes")
             end
         end)
 
