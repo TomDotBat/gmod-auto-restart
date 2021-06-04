@@ -1,6 +1,4 @@
 
-if PIXEL_DEV_MODE then return end
-
 sam.command.new("cancelrestart")
     :SetCategory("PIXEL AutoRestart")
     :Help("Cancels a forced restart.")

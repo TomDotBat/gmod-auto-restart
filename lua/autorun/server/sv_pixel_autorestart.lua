@@ -1,6 +1,4 @@
 
-if PIXEL_DEV_MODE then return end
-
 local config = {
     restartChecker = {
         earliestTime = 6 * 3600, --*3600 for hours

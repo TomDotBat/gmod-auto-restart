@@ -1,6 +1,4 @@
 
-if PIXEL_DEV_MODE then return end
-
 AddCSLuaFile()
 
 if CLIENT then
