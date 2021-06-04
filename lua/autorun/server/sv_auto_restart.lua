@@ -34,7 +34,7 @@ local config = {
         steamJoinLink = "steam://connect/***REMOVED***",
         discordJoinLink = "https://discord.gg/***REMOVED***"
     },
-    authed = {
+    authedSteamIds = {
         ["76561198215456356"] = true, --tom
         ***REMOVED***
     }
@@ -329,9 +329,10 @@ do
     function autoRestart:startRestart(forced, ply)
         if forced then
             if not IsValid(ply) then return end
-            if not config.authed[ply:SteamID64()] then
-                self:sendDiscordAdminMessage("A non-authed user atempted to start a restart " .. ply:Name() .. ":" .. ply:SteamID64())
-            return end
+            if not config.authedSteamIds[ply:SteamID64()] then
+                self:sendDiscordAdminMessage("A unauthorised user attempted to begin a restart " .. ply:Name() .. ":" .. ply:SteamID64())
+                return
+            end
 
             self:sendDiscordAdminMessage(ply:Name() .. " has requested a server restart, running a deploy.")
         end
