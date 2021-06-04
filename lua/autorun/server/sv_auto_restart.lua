@@ -12,31 +12,30 @@ local config = {
         deployDelayTime = 30
     },
     deployHq = {
-        emailAddress = "***REMOVED***",
-        apiKey = "***REMOVED***",
-        apiEndpoint = "***REMOVED***",
-        projectId = "***REMOVED***",
+        emailAddress = "tom@tomdotbat.dev",
+        apiKey = "get from deployhq",
+        apiEndpoint = "https://{your site}.deployhq.com",
+        projectId = "project",
         targetBranch = "master",
-        serverId = "***REMOVED***",
+        serverId = "get from deployhq",
         completionCheckInterval = 15,
         completionCheckLimit = 0
     },
     pterodactyl = {
-        apiKey = "***REMOVED***",
-        apiEndpoint = "***REMOVED***",
-        serverId = "***REMOVED***"
+        apiKey = "get from ptero",
+        apiEndpoint = "https://{yoursite}/api",
+        serverId = "get from ptero"
     },
     discord = {
-        publicWebhook = "***REMOVED***",
-        adminWebhook = "***REMOVED***",
-        username = "PIXEL Auto-Restart",
-        avatarUrl = "***REMOVED***",
-        steamJoinLink = "steam://connect/***REMOVED***",
-        discordJoinLink = "https://discord.gg/***REMOVED***"
+        publicWebhook = "add your webhook",
+        adminWebhook = "add a webhook for admins/management",
+        username = "Auto-Restart",
+        avatarUrl = "avatar image url",
+        steamJoinLink = "steam://connect/serverip",
+        discordJoinLink = "https://discord.gg/serverinvite}"
     },
     authedSteamIds = {
-        ["76561198215456356"] = true, --tom
-        ***REMOVED***
+        ["76561198215456356"] = true --Tom.bat
     }
 }
 
