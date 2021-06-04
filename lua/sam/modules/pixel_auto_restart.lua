@@ -33,16 +33,16 @@ sam.command.new("queuerestart")
     :SetCategory("PIXEL AutoRestart")
     :Help("Start a restart after the provided minutes")
     :SetPermission("restart", "superadmin")
-	:AddArg("length", {optional = false, default = 5})
+    :AddArg("length", {optional = false, default = 5})
 
     :OnExecute(function(caller, length)
         if not AutoRestart then return end
         local timeUntilRestart = length * 60
-        
+
         timer.Create("PIXEL.AutoRestart.RebootTimer", timeUntilRestart, 1, function()
             AutoRestart.StartRestart(caller)
         end)
-        
+
         local timeLeft = length
         timer.Create("PIXEL.AutoRestart.ChatTimer", 60, length, function()
             timeLeft = timeLeft - 1
