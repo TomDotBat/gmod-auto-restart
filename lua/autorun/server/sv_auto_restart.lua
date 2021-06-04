@@ -270,7 +270,7 @@ Join the Discord for an alert for when it's back online:
 end
 
 do
-    if pcall(function() require("chttp") end) then
+    if pcall(require, "chttp") then
         local conf = config.discord
         local function sendRequest(url, message)
             message = string.Replace(message, "\n", "\\n")
