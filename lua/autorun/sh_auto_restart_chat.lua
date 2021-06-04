@@ -6,7 +6,7 @@ if CLIENT then
     local chatMessageCol = Color(255, 255, 255)
 
     net.Receive("AutoRestart.ChatMessage", function()
-        chat.AddText(chatTagCol, "[PIXEL AutoRestart] ", chatMessageCol, net.ReadString())
+        chat.AddText(chatTagCol, "[AutoRestart] ", chatMessageCol, net.ReadString())
         chat.PlaySound()
     end)
 else
@@ -45,34 +45,34 @@ else
         return format("%02i seconds", s)
     end
 
-    hook.Add("AutoRestart.WaitingForPlayersStarted", "PIXEL.AutoRestart.AlertRestartTime", function(timeLeft)
+    hook.Add("AutoRestart.WaitingForPlayersStarted", "AutoRestart.AlertRestartTime", function(timeLeft)
         broadcastMessage(string.format("A restart will automatically run in %s from now, or once everyone has left.",
             formatTime(timeLeft)))
     end)
 
 
-    hook.Add("AutoRestart.ForcefulRestartScheduled", "PIXEL.AutoRestart.AlertRestartScheduled", function(deployTime, restartTime)
+    hook.Add("AutoRestart.ForcefulRestartScheduled", "AutoRestart.AlertRestartScheduled", function(deployTime, restartTime)
         broadcastMessage(string.format("A restart has been scheduled for %s from now, an auto-deploy will run in %s.",
             formatTime(restartTime), formatTime(deployTime)))
     end)
 
-    hook.Add("AutoRestart.ForcefulRestartUnscheduled", "PIXEL.AutoRestart.AlertRestartUnscheduled", function()
+    hook.Add("AutoRestart.ForcefulRestartUnscheduled", "AutoRestart.AlertRestartUnscheduled", function()
         broadcastMessage("The restart was unscheduled due to a deployment problem, the owner has been contacted automatically.")
     end)
 
-    hook.Add("AutoRestart.ForcefulDeployStarted", "PIXEL.AutoRestart.AlertDeployStarted", function()
+    hook.Add("AutoRestart.ForcefulDeployStarted", "AutoRestart.AlertDeployStarted", function()
         broadcastMessage("The auto-deploy request was sent, expect to see server lag and errors.")
     end)
 
-    hook.Add("AutoRestart.ForcefulDeployComplete", "PIXEL.AutoRestart.AlertDeployComplete", function()
+    hook.Add("AutoRestart.ForcefulDeployComplete", "AutoRestart.AlertDeployComplete", function()
         broadcastMessage("The auto-deploy completed successfully, the server will restart soon.")
     end)
 
-    hook.Add("AutoRestart.ForcefulRestartDelayed", "PIXEL.AutoRestart.AlertRestartDelayed", function()
+    hook.Add("AutoRestart.ForcefulRestartDelayed", "AutoRestart.AlertRestartDelayed", function()
         broadcastMessage("The restart was delayed by the deployment system.")
     end)
 
-    hook.Add("AutoRestart.ForcefulRestartStarted", "PIXEL.AutoRestart.AlertRestartStarted", function()
+    hook.Add("AutoRestart.ForcefulRestartStarted", "AutoRestart.AlertRestartStarted", function()
         broadcastMessage("The restart request was sent, the server will be back online shortly.")
     end)
 end
