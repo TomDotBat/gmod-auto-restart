@@ -99,7 +99,7 @@ do
 
     local function getServerRevision(callback)
         HTTP({
-            ["url"] = string.format("%s/projects/%s/servers/%s", conf.apiEndpoint, conf.projectId, conf.serverId),
+            ["url"] = string.format("%s/projects/%s/repository/latest_revision", conf.apiEndpoint, conf.projectId),
             ["method"] = "GET",
             ["headers"] = headers,
             ["success"] = function(statusCode, body)
@@ -114,7 +114,7 @@ do
                     return
                 end
 
-                local lastRevision = body["last_revision"]
+                local lastRevision = body["ref"]
                 if not lastRevision then
                     autoRestart:sendDiscordAdminMessage("Failed to get the server's latest revision via DeployHQ API:\nResponse doesn't contain a last revision.", true)
                     return
@@ -222,8 +222,13 @@ do
                     ["method"] = "POST",
                     ["headers"] = headers,
                     ["type"] = "application/json",
-                    ["body"] = string.format("{\"deployment\":{\"parent_identifier\":\"%s\",\"start_revision\":\"%s\",\"end_revision\":\"%s\"}}",
-                        conf.serverId, curRevision, newRevision),
+                    ["body"] = util.TableToJSON({
+                        deployment = {
+                            parent_identifier = conf.serverId,
+                            start_revision = curRevision,
+                            end_revision = newRevision
+                        }
+                    }),
                     ["success"] = function(statusCode, body)
                         if statusCode ~= 201 then
                             self:sendDiscordAdminMessage("Failed to send a deploy request via DeployHQ API:\nServer returned a non 201 status code.", true)
@@ -292,7 +297,11 @@ do
 
             CHTTP({
                 ["url"] = url,
-                ["body"] = string.format("{\"username\":\"%s\",\"avatar_url\":\"%s\",\"content\":\"%s\"}", conf.username, conf.avatarUrl, message),
+                ["body"] = util.TableToJSON({
+                    username = conf.username,
+                    avatar_url = conf.avatarUrl,
+                    content = message
+                }),
                 ["method"] = "POST",
                 ["headers"] = {
                     ["Accept"] = "application/json",
